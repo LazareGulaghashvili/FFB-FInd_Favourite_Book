@@ -44,5 +44,6 @@ export default {
 <style>
 #app {
   background: #F4F6F8;
+  
 } 
 </style>

@@ -152,14 +152,15 @@ app.get('/outh',
 // enviromental variables 
 const dotenv = require('dotenv')
 dotenv.config()
-// app.get('/set', (req, res ) => {
-//   req.session.userID = 33 
-//   res.send('set')
-// })
 
-app.get('/get-session', (req, res) => {
-  res.send(`user ${req.userId}`)
-})
+function authenticate(req, res, next) {
+ if (req.session && req.session.userID) {
+  return next()
+ } else {
+  return res.sendStatus(401)
+ }
+}
+
 
 app.post('/check', (req, res) => {
   if (req.userId !== null) {
@@ -170,11 +171,11 @@ app.post('/check', (req, res) => {
 })
 
 
-app.get('/', (req, res) => {
+app.get('/', authenticate, (req, res) => {
   res.send('Hello World!')
 })
 // count list items
-app.post('/countitems', (req, res) => {
+app.post('/countitems',  authenticate, (req, res) => {
   conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
     if (err) {
       console.error('There is server error when counting list items', err)
@@ -191,28 +192,29 @@ app.post('/countitems', (req, res) => {
 })
 
 // sign out 
-app.post('/signout', (req, res) => {
+app.post('/signout', authenticate, (req, res) => {
   req.session.userID = null
   req.userId = req.session.userID
   res.send('sign out')
 })
 
 // remove favourite author form list
-app.post('/removeAuthor', (req, res) => {
+app.post('/removeAuthor', authenticate, (req, res) => {
   console.log(req.body.array)
   const newArray = req.body.array.filter((author) => author !== req.body.authorName)
+  console.log(newArray)
   const strNewArray = JSON.stringify(newArray)
   conn.query('UPDATE ffb.users SET Authors = ? WHERE id = ?', [strNewArray, req.userId], (error) => {
     if (error) {
       console.error('there is error related to remove author', error)
     } else {
-      res.json({boolen: false})
+      res.json({array: strNewArray})
       console.log('removed')
     }
   })
 })
 // remove list
-app.post('/removeList', (req, res) => {
+app.post('/removeList', authenticate, (req, res) => {
   conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
     if (err) {
       console.error('There is error related to remove list', err)
@@ -237,7 +239,7 @@ app.post('/removeList', (req, res) => {
 })
 
 
-app.post('/delete', (req, res) => {
+app.post('/delete', authenticate, (req, res) => {
   // const userId = req.session.userID
   conn.query('DELETE FROM ffb.users WHERE id = ?', [req.userId], (err) => {
     if (err) {
@@ -250,7 +252,7 @@ app.post('/delete', (req, res) => {
 })
 
 // add into list 
-app.post('/addlist', (req, res) => {
+app.post('/addlist', authenticate, (req, res) => {
   const addlist = req.body;
   const listnum = addlist.listname;
   const book = addlist.book;
@@ -287,7 +289,7 @@ app.post('/addlist', (req, res) => {
 });
 
 // delete book from list 
-app.post('/deleteB', (req, res) => {
+app.post('/deleteB', authenticate, (req, res) => {
   const bookinfo = req.body
   // const userId = req.session.userID;
   conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
@@ -314,7 +316,7 @@ app.post('/deleteB', (req, res) => {
   })
 }) 
 // send fontend list array 
-app.post('/lists', (req, res) => {
+app.post('/lists', authenticate, (req, res) => {
    conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
     if (err) {
       console.error('There is error relate to send list array to frontend', err)
@@ -324,7 +326,7 @@ app.post('/lists', (req, res) => {
    })
 })
 // check book axistance in lists 
-app.post('/checkbook', (req, res) => {
+app.post('/checkbook', authenticate, (req, res) => {
   conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
     if (err) {
       console.error('There is error relaed to check boo existance', err)
@@ -345,7 +347,7 @@ app.post('/checkbook', (req, res) => {
   })
 })
 // add new list 
-app.post('/addnewlist', (req, res) => {
+app.post('/addnewlist', authenticate, (req, res) => {
   // const userId = req.session.userID;
   conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
     if (err) {
@@ -369,7 +371,7 @@ app.post('/addnewlist', (req, res) => {
   })
 })
 // get user name 
-app.post('/getusername', (req, res) => {
+app.post('/getusername', authenticate, (req, res) => {
   conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
     if (err) {
       console.error('There is error when return username', err)
@@ -415,7 +417,7 @@ if (!req.session.vercode) {
 }
 })
 // Add favourite authors
-app.post('/addauthor', (req, res) => {
+app.post('/addauthor', authenticate, (req, res) => {
   // const userId = req.session.userID;
   conn.query('SELECT * FROM ffb.users WHERE id = ?', [req.userId], (err, result) => {
     if (err) {
@@ -440,7 +442,7 @@ app.post('/addauthor', (req, res) => {
     })
 })
 // add fav genres array
-app.post('/addfavgenre', (req, res) => {
+app.post('/addfavgenre', authenticate, (req, res) => {
   // const userId = req.session.userID
       if (JSON.parse(req.body.favgenres).length !== 0) {
         conn.query('UPDATE ffb.users SET Genres = ? WHERE id = ?', [req.body.favgenres, req.userId], (error) => {

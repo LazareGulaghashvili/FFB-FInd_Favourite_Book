@@ -6,7 +6,7 @@
 
         </div>
         <div class="Books">
-            <swiper class="container" 
+            <swiper class="container" v-if="listarr.length > 0"
     :slides-per-view="findnumber"
     :space-between="50"
     @swiper="onSwiper"
@@ -19,6 +19,7 @@
         </div>
     </swiper-slide>
     </swiper>
+    <p class="noitems" v-if="listarr.length === 0" style="padding: 50px 0px 50px 0px ;" >There is no items</p>
         </div>
     </div>
 </template>

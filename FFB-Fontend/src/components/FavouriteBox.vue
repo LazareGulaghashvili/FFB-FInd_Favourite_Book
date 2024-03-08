@@ -1,10 +1,12 @@
 <template>
 <div class="favouritesbox container-" >
-    <div class="favbox" @click="togglegenresbox()" >
+    <div class="favbox">
         <h3 class="text-center" >Genres</h3>
-        <div class="favlist">
+        <div class="favlist" v-if="favgenres.length > 0" >
             <button v-for="(item, index) in favgenres" :key="index" >{{ item }} </button>
         </div>
+            <p class="noitems" v-if="favgenres.length === 0" >There is no items</p>
+            <fa icon="edit" class="edit" @click="togglegenresbox()"/>
     </div>
     <!-- make genres list -->
     <div class="genre-list" v-if="showgenre" >
@@ -18,18 +20,20 @@
         <div class="fav">
             <h2 class="text-center">Add favourite genres</h2>
             <div class="favbuttons">
-                <button v-for="(item, index) in favgenres" :key="index" class="genrebut" >{{ item }}</button>
+                <button v-for="(item, index) in favgenres" :key="index" class="genrebut" @click="removefavgenre(item)" >{{ item }}</button>
             </div>
             <button class="add" @click="addFavgenre(); togglegenresbox()"  >Save</button>
         </div>
     </div>
-    <div class="favbox" @click="toggleAddList" >
+    <div class="favbox">
         <h3 class="text-center" >Autors</h3>
         <div class="favlist">
-            <div v-if="removed">
-                <button type = "submit" v-for="(item, index) in Autors" :key="index" @click="removeAuthor(item)">{{ item }}</button>
+            <div v-if="Autors.length > 0 ">
+                <button style="margin-bottom: 20px;"  type = "submit" v-for="(item, index) in Autors" :key="index" @click="removeAuthor(item)">{{ item }}</button>
             </div>
+            <p class="noitems" v-if="Autors.length === 0">There is no items</p>
         </div>
+        <fa icon="edit" class="edit" @click="toggleAddList"/>
     </div>
     <div class="addlisr" v-if="show" style="background: transparent; backdrop-filter: blur(10px); box-shadow: 0px 5px 7px rgb(193, 193, 193); border: 1px solid #00078c29; " >
       <h2 class="text-center" >Add author</h2>
@@ -44,7 +48,6 @@
 export default {
     data() {
         return {
-            removed: true,
             showgenre: false,
             show: false,
             author: '',
@@ -111,7 +114,7 @@ export default {
         })
         .then(response => response.json())
         .then(data => {
-            this.removed = data.boolen
+            this.Autors = JSON.parse(data.array)
         })
         .catch(error => {
             console.error('There is error related to remove author from list', error)
@@ -164,6 +167,29 @@ export default {
     
 }
 </script>
+<style>
+.edit {
+    display: none;
+    color: #00068C;
+    font-size: 20px;
+    font-weight: 600;
+    transition: 0.5s;
+    border: 2px solid #00068C;
+    padding: 10px 10px 10px 13px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.favbox:hover > .edit {
+    display: flex;
+}
+.noitems {
+    font-size: 30px;
+    font-weight: 600;
+    color: #00068C;
+    text-align: center;
+}
+
+</style>
 
 <style scoped>
 /* choose genres box */
@@ -251,6 +277,7 @@ width: 295px;
 padding: 12px 41px 26px 41px;
 flex-direction: column;
 align-items: center;
+justify-content: center;
 gap: 22px;
 border-radius: 20px;
 background: #FFF;
