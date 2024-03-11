@@ -5,11 +5,38 @@ const cookieParser = require('cookie-parser')
 const session = require('express-session');
 const helmet = require('helmet')
 const cors = require('cors')
-// const MySQLStore = require('express-mysql-session')(session);
+const MySQLStore = require('express-mysql-session')(session);
+const keys = require('../keys')
+
 
 // Create Express application
 const app = express();
 const port = 3000;
+
+// import mysql
+const mysql = require('mysql2')
+
+// mysql connection
+const options = {
+  host: keys.db.host,
+  user: keys.db.user,
+  password: keys.db.pas,
+  database: keys.db.database
+}
+const conn = mysql.createConnection(options)
+const sessionStore = new MySQLStore({
+  expiration: 10000, // Session expiration time in milliseconds (optional)
+  checkExpirationInterval: 1000, // How frequently expired sessions will be cleared (900000 milliseconds or 15 minutes)
+  createDatabaseTable: false, // Since you already have the sessions table
+  schema: {
+    tableName: 'sessions', // Name of the sessions table
+    columnNames: {
+      session_id: 'session_id', // Name of the column storing session IDs
+      expires: 'expires', // Name of the column storing expiration timestamps
+      data: 'data' // Name of the column storing serialized session data
+    }
+  }
+}, conn);
 
 // use helmet protection
 app.use(helmet());
@@ -35,22 +62,20 @@ app.use(cors({
   exposedHeaders: ['set-cookie']
 }))
 
-const sessionConfig = require('./sessionConfig');
+// const sessionConfig = require('./sessionConfig');
 
 
-const keys = require('../keys')
-app.use(session(sessionConfig))
+app.use(session({
+  secret: keys.secret,                      // Secret key to sign the session ID cookie
+  resave: false,                                  // Don't save session if unmodified
+  saveUninitialized: false,
+  store: sessionStore,                       // Don't create session until something is stored
+  cookie: {
+    secure: false,                                // Set it to true if your app is served over HTTPS
+    httpOnly: true,                               // Cookie accessible only by the web server
+  }
+}))
 
-// import mysql
-const mysql = require('mysql2')
-
-// mysql connection
-const conn =  mysql.createConnection({
-  host: process.env.HOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
-  database: process.env.DB
-})
 conn.connect((err) => {
   if (err) {
       console.error("I couldn't connect with mysql server", err)
@@ -134,7 +159,7 @@ app.get('/outh',
       }
     })
   }
-);
+); 
 
 // Route to handle profile page
 // app.get('/profile', isAuthenticated, (req, res) => {
@@ -149,9 +174,6 @@ app.get('/outh',
 //   res.redirect('/');
 // }
 
-// enviromental variables 
-const dotenv = require('dotenv')
-dotenv.config()
 
 function authenticate(req, res, next) {
  if (req.session && req.session.userID) {
@@ -193,9 +215,18 @@ app.post('/countitems',  authenticate, (req, res) => {
 
 // sign out 
 app.post('/signout', authenticate, (req, res) => {
-  req.session.userID = null
-  req.userId = req.session.userID
-  res.send('sign out')
+  // req.session.userID = null
+  // req.userId = req.session.userID
+  // res.send('sign out')
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error destroying session:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+     res.send('sign out')
+     console.log('sign out seccesfully')
+    }
+  })
 })
 
 // remove favourite author form list
