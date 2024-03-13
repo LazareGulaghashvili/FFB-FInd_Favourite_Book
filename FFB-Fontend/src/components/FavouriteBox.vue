@@ -6,25 +6,30 @@
             <button v-for="(item, index) in favgenres" :key="index" >{{ item }} </button>
         </div>
             <p class="noitems" v-if="favgenres.length === 0" >There is no items</p>
-            <fa icon="edit" class="edit" @click="togglegenresbox()"/>
+            <button type="button" class="bbutton" data-bs-toggle="modal" data-bs-target="#genresmodal">
+                <fa icon="edit" class="edit"/>
+            </button>
     </div>
-    <!-- make genres list -->
-    <div class="genre-list" v-if="showgenre" >
-        <fa icon="close" @click="togglegenresbox()" style="position: absolute; margin-left: 94%; color: #00068C; font-size: 25px; margin-top: 5px; cursor: pointer;" />
-        <div class="all">
-            <h2 class="text-center">All genres</h2>
-            <div class="buttons">
-                <button class="genrebut" v-for="(item, index) in genres" :key="index" @click="addfavgenre(item)"> {{ item }} </button>
-            </div>
-        </div>
-        <div class="fav">
-            <h2 class="text-center">Add favourite genres</h2>
-            <div class="favbuttons">
-                <button v-for="(item, index) in favgenres" :key="index" class="genrebut" @click="removefavgenre(item)" >{{ item }}</button>
-            </div>
-            <button class="add" @click="addFavgenre(); togglegenresbox()"  >Save</button>
-        </div>
+    <!-- modal -->
+    <div class="modal fade" id="genresmodal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Add genre</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding-left: 30px; padding-right: 30px;" >
+        <ul class="list-group">
+          <li class="list-group-item" v-for="(item, index) in genres" :key="index" @click="addfavgenre(item)" style="cursor: pointer;" >{{item}}</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-bs-dismiss="modal" style="background-color: #00068C; color: white; " >Close</button>
+        <button type="button" class="btn" data-bs-dismiss="modal" style="background-color: rgba(0, 48, 13, 0.942); color: white; " @click="addFavgenre()" >Save changes</button>
+      </div>
     </div>
+  </div>
+</div>
     <div class="favbox">
         <h3 class="text-center" >Autors</h3>
         <div class="favlist">
@@ -33,13 +38,31 @@
             </div>
             <p class="noitems" v-if="Autors.length === 0">There is no items</p>
         </div>
-        <fa icon="edit" class="edit" @click="toggleAddList"/>
+            <button type="button" class="bbutton" data-bs-toggle="modal" data-bs-target="#authormdel">
+                <fa icon="edit" class="edit"/>
+            </button>
+        </div>
+        <!-- author model -->
+        <div class="modal fade" id="authormdel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Add author</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding-left: 30px; padding-right: 30px; max-height: 300px; overflow-y: scroll;" >
+      <input type="text" placeholder="Author name" v-model="author" style="width: 100%; height: 40px; margin-bottom: 10px; border: 1px solid #00078c29; outline: none; border-radius: 5px; " >
+        <ul class="list-group">
+          <li class="list-group-item" v-for="(item, index) in chooseauth" :key="index" style="cursor: pointer;" @click="addauthor(item.name)" >{{item.name}}</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-bs-dismiss="modal" style="background-color: #00068C; color: white; " >Close</button>
+        <button type="button" class="btn" data-bs-dismiss="modal" style="background-color: rgba(0, 48, 13, 0.942); color: white; " @click="addAuthor()" >Save changes</button>
+      </div>
     </div>
-    <div class="addlisr" v-if="show" style="background: transparent; backdrop-filter: blur(10px); box-shadow: 0px 5px 7px rgb(193, 193, 193); border: 1px solid #00078c29; " >
-      <h2 class="text-center" >Add author</h2>
-      <input type="text" placeholder="Author name" v-model="author">
-      <button @click="addauthor(); toggleAddList()">{{ value }}</button>
-    </div>
+  </div>
+</div>
 </div>
 </template>
 
@@ -62,6 +85,7 @@ export default {
                 'Drama'
             ],
             favgenres: [],
+            chooseauth: [],
             Autors: []
         }
     },
@@ -76,30 +100,40 @@ export default {
     watch: {
         author: {
             handler: function() {
-                if (this.author === '') {
-                    this.value = 'Close'
-                } else {
-                    this.value = 'Add'
-                }
+              this.fetchauthor()
             }
         }
     },
     methods: {
-        togglegenresbox() {
-            this.showgenre = !this.showgenre
-        },
+      fetchauthor() {
+        fetch(`https://openlibrary.org/search/authors.json?q=${encodeURIComponent(this.author)}`)
+        .then(response => response.json())
+        .then(data => {
+          this.chooseauth = data.docs
+          console.log(data.docs)
+        })
+        .catch(error => {
+          console.error('There is err', error)
+        })
+      },
         addfavgenre(genre) {
             var array = this.favgenres.filter((gen) => gen === genre)
             if (array.length === 0) {
                 this.favgenres.push(genre)
+            } else {
+                array = this.favgenres.filter((gen) => gen !== genre)
+                this.favgenres = array
             }
         },
-        removefavgenre(genre) {
-            this.favgenres = this.favgenres.filter((gen) => gen !== genre)
-        },
-        toggleAddList() {
-      this.show = !this.show;
-    },
+        addauthor(auth) {
+  var array = this.Autors.filter((author) => author === auth);
+  if (array.length === 0) {
+    this.Autors.push(auth);
+  } else {
+    array = this.Autors.filter((author) => author !== auth);
+    this.Autors = array; // Corrected line
+  }
+},
     removeAuthor(author) {
         fetch('http://localhost:3000/removeAuthor', {
             method: 'POST',
@@ -139,7 +173,7 @@ export default {
           console.error('Your genre could not add', err)
         })
     },
-    addauthor() {
+    addAuthor() {
         fetch('http://localhost:3000/addauthor', {
           method: 'POST',
         credentials: 'include',
@@ -147,7 +181,7 @@ export default {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            author: this.author,
+            author: (this.Autors),
           })
         })
         .then(response => response.json())
@@ -161,15 +195,20 @@ export default {
     
     },
     mounted() {
-            this.addauthor();
+            this.addAuthor();
             this.addFavgenre();
     }
     
 }
 </script>
 <style>
-.edit {
+.bbutton {
     display: none;
+    border: none;
+    background: transparent;
+}
+
+.edit {
     color: #00068C;
     font-size: 20px;
     font-weight: 600;
@@ -179,7 +218,7 @@ export default {
     border-radius: 50%;
     cursor: pointer;
 }
-.favbox:hover > .edit {
+.favbox:hover > .bbutton {
     display: flex;
 }
 .noitems {

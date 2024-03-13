@@ -25,8 +25,8 @@ const options = {
 }
 const conn = mysql.createConnection(options)
 const sessionStore = new MySQLStore({
-  expiration: 10000, // Session expiration time in milliseconds (optional)
-  checkExpirationInterval: 1000, // How frequently expired sessions will be cleared (900000 milliseconds or 15 minutes)
+  expiration: 1000 * 60 * 60 * 24, // Session expiration time in milliseconds (optional)
+  checkExpirationInterval: 1000 * 60 * 60, // How frequently expired sessions will be cleared (900000 milliseconds or 15 minutes)
   createDatabaseTable: false, // Since you already have the sessions table
   schema: {
     tableName: 'sessions', // Name of the sessions table
@@ -454,15 +454,15 @@ app.post('/addauthor', authenticate, (req, res) => {
     if (err) {
       console.error('There is error related to add fav author', err)
     } else {
-      if (req.body.author !== '') {
-        const authorsarray = JSON.parse(result[0].Authors)
-        authorsarray.push(req.body.author)
-        const strAuthors = JSON.stringify(authorsarray) 
-        conn.query('UPDATE ffb.users SET Authors = ? WHERE id = ?', [strAuthors, req.userId], (error) => {
+      if (req.body.author.length !== 0) {
+        // const authorsarray = JSON.parse(result[0].Authors)
+        const authorsarray = JSON.stringify(req.body.author)
+        // const strAuthors = JSON.stringify(authorsarray) 
+        conn.query('UPDATE ffb.users SET Authors = ? WHERE id = ?', [authorsarray, req.userId], (error) => {
           if (error) {
             console.error('There is error related to add new author update', error)
           } else {
-            res.json({authors: strAuthors})
+            res.json({authors: authorsarray})
             console.log('Author add')
           }
         })
